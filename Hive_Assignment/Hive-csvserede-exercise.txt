@@ -1,0 +1,72 @@
+-- Creating table on CSVSerDe
+
+CREATE TABLE csv_table(name string, location string)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+    "separatorChar" = ",",
+    "quoteChar"     = "\"",
+    "escapeChar"    = "\\"
+)
+STORED AS TEXTFILE
+TBLPROPERTIES ("skip.header.line.count"="1")
+;
+
+Output:
+
++----------------------------------------------------+
+|                   createtab_stmt                   |
++----------------------------------------------------+
+| CREATE TABLE `csv_table`(                          |
+|   `name` string COMMENT 'from deserializer',       |
+|   `location` string COMMENT 'from deserializer')   |
+| ROW FORMAT SERDE                                   |
+|   'org.apache.hadoop.hive.serde2.OpenCSVSerde'     |
+| WITH SERDEPROPERTIES (                             |
+|   'escapeChar'='\\',                               |
+|   'quoteChar'='"',                                 |
+|   'separatorChar'=',')                             |
+| STORED AS INPUTFORMAT                              |
+|   'org.apache.hadoop.mapred.TextInputFormat'       |
+| OUTPUTFORMAT                                       |
+|   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' |
+| LOCATION                                           |
+|   'hdfs://sandbox-hdp.hortonworks.com:8020/warehouse/tablespace/managed/hive/bigdatastudy.db/csv_table' |
+| TBLPROPERTIES (                                    |
+|   'bucketing_version'='2',                         |
+|   'skip.header.line.count'='1',                    |
+|   'transactional'='true',                          |
+|   'transactional_properties'='insert_only',        |
+|   'transient_lastDdlTime'='1627033979')            |
++----------------------------------------------------+
+
+-- Load data to csv_table:
+
+LOAD DATA LOCAL INPATH '/tmp/csvserde.csv' INTO TABLE csv_table;
+
+Select * from csv_table;
+
+Input:
+
+"1","Venkat"
+"1","Santosh"
+"1","Sarath"
+"1","Suneel"
+"1","Ganesh"
+"1","BBSR,India"
+"1","MUM,India"
+
+Output:
+
++-----------------+---------------------+
+| csv_table.name  | csv_table.location  |
++-----------------+---------------------+
+| 2               | Santosh             |
+| 3               | Sarath              |
+| 4               | Lokesh              |
+| 5               | Suneel              |
+| 6               | Ganesh              |
+| Amit            | BBSR,India          |
+| Sumit           | MUM,India           |
++-----------------+---------------------+
+
+Note: As I have used skip header line count in the table creation the row of my data set is removed.

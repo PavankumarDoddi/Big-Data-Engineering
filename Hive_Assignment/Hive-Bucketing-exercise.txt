@@ -1,0 +1,102 @@
+-- Creating two table 'Users' & 'locations'
+
+CREATE TABLE users
+(
+id INT,
+name STRING,
+salary INT,
+unit STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+CREATE TABLE locations
+(
+id INT,
+location STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+-- Loading data to Users and Locations table
+
+LOAD DATA LOCAL INPATH '/tmp/users.txt' INTO TABLE users;
+LOAD DATA LOCAL INPATH '/tmp/locations.txt' INTO TABLE locations;
+
+-- select records from users and locations table
+
+select * from users limit 1;
+select * from locations limit 1;
+
+Output:
++-----------+-------------+---------------+-------------+
+| users.id  | users.name  | users.salary  | users.unit  |
++-----------+-------------+---------------+-------------+
+| 1         | Amit        | 100           | DNA         |
++-----------+-------------+---------------+-------------+
++---------------+---------------------+
+| locations.id  | locations.location  |
++---------------+---------------------+
+| 1             | UP                  |
++---------------+---------------------+
+
+
+-- Create two table with bucketing in place
+
+CREATE TABLE buck_users
+(
+id INT,
+name STRING,
+salary INT,
+unit STRING
+)
+CLUSTERED BY (id)
+SORTED BY (id)
+INTO 2 BUCKETS;
+
+CREATE TABLE buck_locations
+(
+id INT,
+location STRING
+)
+CLUSTERED BY (id)
+SORTED BY (id)
+INTO 2 BUCKETS;
+
+-- Inserting data into two bucketing tables:
+
+INSERT OVERWRITE TABLE buck_users SELECT * FROM users;
+INSERT OVERWRITE TABLE buck_locations SELECT * FROM locations;
+
+-- Querying both bucket tables:
+
+select * from buck_users limit 1;
+select * from buck_locations limit 1;
+
+Output:
++----------------+------------------+--------------------+------------------+
+| buck_users.id  | buck_users.name  | buck_users.salary  | buck_users.unit  |
++----------------+------------------+--------------------+------------------+
+| 2              | Sumit            | 200                | DNA              |
++----------------+------------------+--------------------+------------------+
++--------------------+--------------------------+
+| buck_locations.id  | buck_locations.location  |
++--------------------+--------------------------+
+| 2                  | BIHAR                    |
++--------------------+--------------------------+
+
+-- Files cretaed in HDFS Location:
+
+/warehouse/tablespace/managed/hive/bigdatastudy.db/buck_users
+/warehouse/tablespace/managed/hive/bigdatastudy.db/buck_locations
+
+[root@sandbox-hdp ~]# hdfs dfs -ls /warehouse/tablespace/managed/hive/bigdatastudy.db/buck_locations
+Found 1 items
+drwxrwxrwx+  - hive hadoop          0 2021-07-23 05:43 /warehouse/tablespace/managed/hive/bigdatastudy.db/buck_locations/base_0000001
+[root@sandbox-hdp ~]# hdfs dfs -ls /warehouse/tablespace/managed/hive/bigdatastudy.db/buck_locations/base_0000001
+Found 2 items
+-rw-rw-rw-+  1 hive hadoop        328 2021-07-23 05:43 /warehouse/tablespace/managed/hive/bigdatastudy.db/buck_locations/base_0000001/000000_0
+-rw-rw-rw-+  1 hive hadoop        313 2021-07-23 05:43 /warehouse/tablespace/managed/hive/bigdatastudy.db/buck_locations/base_0000001/000001_0
+

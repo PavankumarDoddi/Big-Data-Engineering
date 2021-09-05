@@ -1,0 +1,102 @@
+--------------------------------------------------------------------------------
+ADDING JAR FOR JsonSerDe
+--------------------------------------------------------------------------------
+
+ADD JAR /usr/local/hive/hcatalog/share/hcatalog/hive-hcatalog-core-0.14.0.jar;
+
+Output: Unable to load jar file. Tried below apporach
+
+1. downloaded hive-hcatalog-core-0.13.0.jar file.
+2. copied file to root folder using winscp.
+3. put the file into HDFS location /user/root/.
+4. executed below command from putty using 'Hive' user but getting error message 'bash: add: command not found'
+
+ADD JAR /user/root/hive-hcatalog-core-0.13.0.jar.
+
+Note: But able to create a Hive table.
+
+--------------------------------------------------------------------------------
+CREATING TABLE USING JsonSerDe
+--------------------------------------------------------------------------------
+
+CREATE TABLE json_table(name string, id bigint, skills array<string>)
+ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+STORED AS TEXTFILE;
+
+Output:
++------------------+----------------+--------------------+
+| json_table.name  | json_table.id  | json_table.skills  |
++------------------+----------------+--------------------+
++------------------+----------------+--------------------+
+
++----------------------------------------------------+
+|                   createtab_stmt                   |
++----------------------------------------------------+
+| CREATE TABLE `json_table`(                         |
+|   `name` string COMMENT 'from deserializer',       |
+|   `id` bigint COMMENT 'from deserializer',         |
+|   `skills` array<string> COMMENT 'from deserializer') |
+| ROW FORMAT SERDE                                   |
+|   'org.apache.hive.hcatalog.data.JsonSerDe'        |
+| STORED AS INPUTFORMAT                              |
+|   'org.apache.hadoop.mapred.TextInputFormat'       |
+| OUTPUTFORMAT                                       |
+|   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat' |
+| LOCATION                                           |
+|   'hdfs://sandbox-hdp.hortonworks.com:8020/warehouse/tablespace/managed/hive/bigdatastudy.db/json_table' |
+| TBLPROPERTIES (                                    |
+|   'bucketing_version'='2',                         |
+|   'transactional'='true',                          |
+|   'transactional_properties'='insert_only',        |
+|   'transient_lastDdlTime'='1627041626')            |
++----------------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+Sample JSON File
+--------------------------------------------------------------------------------
+
+vi json_file.json
+{"name":"Amit", "id":1, "skills":["Hadoop", "Python"]}
+{"name":"Sumit", "id":2, "skills":["Hadoop", "Hive"]}
+{"name":"Rohit", "id":3, "skills":["Oozie", "Python"]}
+
+Output:
+
+[root@sandbox-hdp ~]# cat json_file.json
+{"name":"Amit", "id":1, "skills":["Hadoop", "Python"]}
+{"name":"Sumit", "id":2, "skills":["Hadoop", "Hive"]}
+{"name":"Rohit", "id":3, "skills":["Oozie", "Python"]}
+
+
+--------------------------------------------------------------------------------
+Loading DATA in table
+--------------------------------------------------------------------------------
+
+LOAD DATA LOCAL INPATH '/tmp/json_file.json' OVERWRITE INTO TABLE json_table;
+
+select * from json_table;
+
+Output:
+
++------------------+----------------+----------------------+
+| json_table.name  | json_table.id  |  json_table.skills   |
++------------------+----------------+----------------------+
+| Amit             | 1              | ["Hadoop","Python"]  |
+| Sumit            | 2              | ["Hadoop","Hive"]    |
+| Rohit            | 3              | ["Oozie","Python"]   |
++------------------+----------------+----------------------+
+
+
+- Run select statement on <string>Array
+
+select skills[0] from json_table;
+
+Output:
++---------+
+|   _c0   |
++---------+
+| Hadoop  |
+| Hadoop  |
+| Oozie   |
++---------+

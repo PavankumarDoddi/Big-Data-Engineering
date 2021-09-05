@@ -1,0 +1,124 @@
+Hive Assignment:
+
+Partitioning:
+
+Table Creation:
+
+CREATE TABLE emp_details (
+emp_name string,
+unit string,
+exp int
+)
+partitioned by (location string)
+row format delimited fields terminated by '\t'
+Lines terminated by '\n'
+STORED AS TEXTFILE;
+
+Loading data from a file to table:
+
+LOAD DATA LOCAL INPATH '/tmp/empdetails.tsv' OVERWRITE INTO TABLE emp_details;
+
+ emp_details.emp_name  | emp_details.unit  | emp_details.exp  |    emp_details.location     |
++-----------------------+-------------------+------------------+-----------------------------+
+| is                    | F                 | 10               | BLR                         |
+| Benjamin              | M                 | 10               | BLR                         |
+| Nancy                 | F                 | 10               | BLR                         |
+| Diana                 | F                 | 8                | BLR                         |
+| Wayne                 | M                 | 8                | BLR                         |
+| Cheryl                | F                 | 8                | BLR                         |
+| Paula                 | F                 | 8                | BLR                         |
+| Julia                 | F                 | 5                | BLR                         |
+| Joe                   | M                 | 10               | CHN                         |
+| Frances               | F                 | 8                | CHN                         |
+| Ralph                 | M                 | 8                | CHN                         |
+| Melissa               | F                 | 8                | CHN                         |
+| Diane                 | F                 | 10               | DEL                         |
+| Jack                  | M                 | 8                | DEL                         |
+| Joshua                | M                 | 8                | DEL                         |
+| Theresa               | F                 | 8                | DEL                         |
+| Brenda                | F                 | 10               | HYD                         |
+| Patrick               | M                 | 10               | HYD                         |
+| Carol                 | F                 | 10               | HYD                         |
+|                       | NULL              | NULL             | __HIVE_DEFAULT_PARTITION__ 
+
+Running select statement using filter condition:
+
+Query: select * from emp_details where location = 'BLR'
+
+Result: 
+ emp_details.emp_name  | emp_details.unit  | emp_details.exp  | emp_details.location  |
++-----------------------+-------------------+------------------+-----------------------+
+| is                    | F                 | 10               | BLR                   |
+| Benjamin              | M                 | 10               | BLR                   |
+| Nancy                 | F                 | 10               | BLR                   |
+| Diana                 | F                 | 8                | BLR                   |
+| Wayne                 | M                 | 8                | BLR                   |
+| Cheryl                | F                 | 8                | BLR                   |
+| Paula                 | F                 | 8                | BLR                   |
+| Julia                 | F                 | 5                | BLR                   |
++-----------------------+-------------------+------------------+-----------------------+
+
+Directories created in HDFS:
+
+[root@sandbox-hdp ~]# hdfs dfs -ls /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details
+Found 5 items
+drwxrwxrwx+  - hive hadoop          0 2021-07-23 03:38 /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details/location=BLR
+drwxrwxrwx+  - hive hadoop          0 2021-07-23 03:38 /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details/location=CHN
+drwxrwxrwx+  - hive hadoop          0 2021-07-23 03:38 /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details/location=DEL
+drwxrwxrwx+  - hive hadoop          0 2021-07-23 03:38 /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details/location=HYD
+drwxrwxrwx+  - hive hadoop          0 2021-07-23 03:38 /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details/location=__HIVE_DEFAULT_PARTITION__
+
+Create new table and copy data from table 1 to table 2
+
+Table:
+
+CREATE TABLE emp_details_partitioned (
+emp_name string,
+unit string,
+exp int
+)
+partitioned by (location string)
+row format delimited fields terminated by '\t'
+Lines terminated by '\n'
+STORED AS TEXTFILE;
+
+Query to load data to partitioned table using static partitioning:
+
+insert overwrite emp_details_partitioned partition(location = 'BLR') select emp_name,unit,exp from emp_details where location = 'BLR';
+
+Result:
+
+ emp_details_partitioned.emp_name  | emp_details_partitioned.unit  | emp_details_partitioned.exp  | emp_details_partitioned.location  |
++-----------------------------------+-------------------------------+------------------------------+-----------------------------------+
+| is                                | F                             | 10                           | BLR                               |
+| Benjamin                          | M                             | 10                           | BLR                               |
+| Nancy                             | F                             | 10                           | BLR                               |
+| Diana                             | F                             | 8                            | BLR                               |
+| Wayne                             | M                             | 8                            | BLR                               |
+| Cheryl                            | F                             | 8                            | BLR                               |
+| Paula                             | F                             | 8                            | BLR                               |
+| Julia                             | F                             | 5                            | BLR                               |
+
+
+Directories created in HDFS:
+
+[root@sandbox-hdp ~]# hdfs dfs -ls /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details_partitioned
+Found 1 items
+drwxr-xr-x+  - hive hadoop          0 2021-07-23 04:10 /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details_partitioned/location=BLR
+
+
+Dropping partition from the emp_details_partitioned:
+
+Query: 
+alter table emp_details_partitioned drop partition (location='BLR')
+
+Result of select statement post partition drop:
++-----------------------------------+-------------------------------+------------------------------+-----------------------------------+
+| emp_details_partitioned.emp_name  | emp_details_partitioned.unit  | emp_details_partitioned.exp  | emp_details_partitioned.location  |
++-----------------------------------+-------------------------------+------------------------------+-----------------------------------+
++-----------------------------------+-------------------------------+------------------------------+-----------------------------------+
+
+Directory location cleared as the table created is Internal Table:
+[root@sandbox-hdp ~]# hdfs dfs -ls /warehouse/tablespace/managed/hive/bigdatastudy.db/emp_details_partitioned
+[root@sandbox-hdp ~]#
+

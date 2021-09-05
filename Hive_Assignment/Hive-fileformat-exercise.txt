@@ -1,0 +1,204 @@
+File Formatting:
+
+--Creating tables for each format.
+--Text format
+CREATE TABLE tbl_text (
+c1 int,
+c2 int,
+c3 int,
+c4 int
+)
+row format delimited fields terminated by '\t'
+Lines terminated by '\n'
+STORED AS TEXTFILE;
+--Sequence Format
+CREATE TABLE tbl_sequence (
+c1 int,
+c2 int,
+c3 int,
+c4 int
+)
+STORED AS SEQUENCEFILE;
+--RC format
+CREATE TABLE tbl_RC (
+c1 int,
+c2 int,
+c3 int,
+c4 int
+)
+STORED AS RCFILE;
+-- ORC format
+CREATE TABLE tbl_ORC (
+c1 int,
+c2 int,
+c3 int,
+c4 int
+)
+STORED AS ORC;
+-- PARQUET format
+CREATE TABLE tbl_PARQUET (
+c1 int,
+c2 int,
+c3 int,
+c4 int
+)
+STORED AS PARQUET;
+
+-- Loading data to text format file
+
+LOAD DATA LOCAL INPATH '/tmp/sampleintdetails.tsv' OVERWRITE INTO TABLE tbl_text; 
+
+Select Query Result:
+
+Select * from tbl_text limit 5;
+
++--------------+--------------+--------------+--------------+
+| tbl_text.c1  | tbl_text.c2  | tbl_text.c3  | tbl_text.c4  |
++--------------+--------------+--------------+--------------+
+| 1            | 100          | 300          | 500          |
+| 2            | 101          | 301          | 501          |
+| 3            | 102          | 302          | 502          |
+| 4            | 103          | 303          | 503          |
+| 5            | 104          | 304          | 504          |
++--------------+--------------+--------------+--------------+
+
+-- Loading text data into different file format tables:
+
+Query:
+
+FROM tbl_text
+Insert OVERWRITE TABLE tbl_sequence select *
+Insert OVERWRITE TABLE tbl_rc select *
+Insert OVERWRITE TABLE tbl_orc select *
+Insert OVERWRITE TABLE tbl_PARQUET select *;
+
+Selecting file format tables:
+
+select * from tbl_ORC limit 1;
+select * from tbl_PARQUET limit 1;
+select * from tbl_RC limit 1;
+select * from tbl_sequence limit 1;
+
+Ouptput:
+
++-------------+-------------+-------------+-------------+
+| tbl_orc.c1  | tbl_orc.c2  | tbl_orc.c3  | tbl_orc.c4  |
++-------------+-------------+-------------+-------------+
+| 1           | 100         | 300         | 500         |
++-------------+-------------+-------------+-------------+
++-----------------+-----------------+-----------------+-----------------+
+| tbl_parquet.c1  | tbl_parquet.c2  | tbl_parquet.c3  | tbl_parquet.c4  |
++-----------------+-----------------+-----------------+-----------------+
+| 1               | 100             | 300             | 500             |
++-----------------+-----------------+-----------------+-----------------+
++------------+------------+------------+------------+
+| tbl_rc.c1  | tbl_rc.c2  | tbl_rc.c3  | tbl_rc.c4  |
++------------+------------+------------+------------+
+| 1          | 100        | 300        | 500        |
++------------+------------+------------+------------+
++------------------+------------------+------------------+------------------+
+| tbl_sequence.c1  | tbl_sequence.c2  | tbl_sequence.c3  | tbl_sequence.c4  |
++------------------+------------------+------------------+------------------+
+| 1                | 100              | 300              | 500              |
++------------------+------------------+------------------+------------------+
+
+-- copying data from parquet file format table to ORC table:
+
+Query:
+
+Insert into table tbl_orc select * from tbl_PARQUET limit 5;
+
+Output:
+
+5 rows inserted to tbl_orc table and the row count is increased by 5
++------+
+| _c0  |
++------+
+| 25   |
++------+
+
+-- Get the stripe and compression details for ORC file:
+
+Hive command to run from root account: hive --orcfiledump /warehouse/tablespace/managed/hive/bigdatastudy.db/tbl_orc
+
+Output:
+
+Processing data file hdfs://sandbox-hdp.hortonworks.com:8020/warehouse/tablespace/managed/hive/bigdatastudy.db/tbl_orc/base_0000002/bucket_00000 [length: 1062]
+Structure for hdfs://sandbox-hdp.hortonworks.com:8020/warehouse/tablespace/managed/hive/bigdatastudy.db/tbl_orc/base_0000002/bucket_00000
+File Version: 0.12 with ORC_135
+Rows: 25
+Compression: ZLIB
+Compression size: 262144
+Type: struct<operation:int,originalTransaction:bigint,bucket:int,rowId:bigint,currentTransaction:bigint,row:struct<c1:int,c2:int,c3:int,c4:int>>
+
+Stripe Statistics:
+  Stripe 1:
+    Column 0: count: 25 hasNull: false
+    Column 1: count: 25 hasNull: false bytesOnDisk: 7 min: 0 max: 0 sum: 0
+    Column 2: count: 25 hasNull: false bytesOnDisk: 9 min: 1 max: 2 sum: 30
+    Column 3: count: 25 hasNull: false bytesOnDisk: 11 min: 536870912 max: 536870912 sum: 13421772800
+    Column 4: count: 25 hasNull: false bytesOnDisk: 29 min: 0 max: 19 sum: 200
+    Column 5: count: 25 hasNull: false bytesOnDisk: 9 min: 1 max: 2 sum: 30
+    Column 6: count: 25 hasNull: false
+    Column 7: count: 25 hasNull: false bytesOnDisk: 29 min: 1 max: 20 sum: 225
+    Column 8: count: 25 hasNull: false bytesOnDisk: 30 min: 100 max: 119 sum: 2700
+    Column 9: count: 25 hasNull: false bytesOnDisk: 49 min: 300 max: 319 sum: 7700
+    Column 10: count: 25 hasNull: false bytesOnDisk: 50 min: 500 max: 519 sum: 12700
+
+File Statistics:
+  Column 0: count: 25 hasNull: false
+  Column 1: count: 25 hasNull: false bytesOnDisk: 7 min: 0 max: 0 sum: 0
+  Column 2: count: 25 hasNull: false bytesOnDisk: 9 min: 1 max: 2 sum: 30
+  Column 3: count: 25 hasNull: false bytesOnDisk: 11 min: 536870912 max: 536870912 sum: 13421772800
+  Column 4: count: 25 hasNull: false bytesOnDisk: 29 min: 0 max: 19 sum: 200
+  Column 5: count: 25 hasNull: false bytesOnDisk: 9 min: 1 max: 2 sum: 30
+  Column 6: count: 25 hasNull: false
+  Column 7: count: 25 hasNull: false bytesOnDisk: 29 min: 1 max: 20 sum: 225
+  Column 8: count: 25 hasNull: false bytesOnDisk: 30 min: 100 max: 119 sum: 2700
+  Column 9: count: 25 hasNull: false bytesOnDisk: 49 min: 300 max: 319 sum: 7700
+  Column 10: count: 25 hasNull: false bytesOnDisk: 50 min: 500 max: 519 sum: 12700
+
+Stripes:
+  Stripe: offset: 3 data: 223 rows: 25 tail: 90 index: 256
+    Stream: column 0 section ROW_INDEX start: 3 length 11
+    Stream: column 1 section ROW_INDEX start: 14 length 24
+    Stream: column 2 section ROW_INDEX start: 38 length 24
+    Stream: column 3 section ROW_INDEX start: 62 length 30
+    Stream: column 4 section ROW_INDEX start: 92 length 25
+    Stream: column 5 section ROW_INDEX start: 117 length 24
+    Stream: column 6 section ROW_INDEX start: 141 length 11
+    Stream: column 7 section ROW_INDEX start: 152 length 25
+    Stream: column 8 section ROW_INDEX start: 177 length 27
+    Stream: column 9 section ROW_INDEX start: 204 length 27
+    Stream: column 10 section ROW_INDEX start: 231 length 28
+    Stream: column 1 section DATA start: 259 length 7
+    Stream: column 2 section DATA start: 266 length 9
+    Stream: column 3 section DATA start: 275 length 11
+    Stream: column 4 section DATA start: 286 length 29
+    Stream: column 5 section DATA start: 315 length 9
+    Stream: column 7 section DATA start: 324 length 29
+    Stream: column 8 section DATA start: 353 length 30
+    Stream: column 9 section DATA start: 383 length 49
+    Stream: column 10 section DATA start: 432 length 50
+    Encoding column 0: DIRECT
+    Encoding column 1: DIRECT_V2
+    Encoding column 2: DIRECT_V2
+    Encoding column 3: DIRECT_V2
+    Encoding column 4: DIRECT_V2
+    Encoding column 5: DIRECT_V2
+    Encoding column 6: DIRECT
+    Encoding column 7: DIRECT_V2
+    Encoding column 8: DIRECT_V2
+    Encoding column 9: DIRECT_V2
+    Encoding column 10: DIRECT_V2
+
+File length: 1062 bytes
+Padding length: 0 bytes
+Padding ratio: 0%
+
+User Metadata:
+  hive.acid.key.index=2,536870912,4;
+  hive.acid.stats=25,0,0
+  hive.acid.version=2
+________________________________________________________________________________________________________________________
+
